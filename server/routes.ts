@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update partner stats
       await storage.updatePartner(partner.id, {
-        coursesInProgress: partner.coursesInProgress + 1,
+        coursesInProgress: (partner.coursesInProgress || 0) + 1,
       });
       
       res.json(enrollment);

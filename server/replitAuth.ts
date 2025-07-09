@@ -57,6 +57,7 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  // Create or update user
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
@@ -64,6 +65,26 @@ async function upsertUser(
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
   });
+
+  // Check if partner exists, if not create a default one
+  const existingPartner = await storage.getPartnerByUserId(claims["sub"]);
+  if (!existingPartner) {
+    // Create a default partner profile
+    const email = claims["email"] || "";
+    const company = email.split("@")[1]?.split(".")[0] || "Empresa";
+    const utmTag = `partner_${claims["sub"]}_${Date.now()}`;
+    
+    await storage.createPartner({
+      userId: claims["sub"],
+      company: company.charAt(0).toUpperCase() + company.slice(1),
+      classification: "bronze",
+      utmTag: utmTag,
+      totalScore: 0,
+      completedCourses: 0,
+      coursesInProgress: 0,
+      completionRate: "0",
+    });
+  }
 }
 
 export async function setupAuth(app: Express) {
