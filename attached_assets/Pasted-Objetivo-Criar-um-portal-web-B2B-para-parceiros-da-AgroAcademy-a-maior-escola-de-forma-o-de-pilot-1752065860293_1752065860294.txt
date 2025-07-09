@@ -1,0 +1,59 @@
+Objetivo: Criar um portal web B2B para parceiros da AgroAcademy, a maior escola de formação de pilotos de drones agrícolas do mundo. O portal deve centralizar todas as operações dos parceiros e ser acessível apenas por login. Após o login, o conteúdo exibido deve ser personalizado com base nos dados do parceiro (como classificação, cursos, desempenho e UTM para inscrições).
+________________________________________
+🔐 Funcionalidade de Login:
+•	Implementar sistema de autenticação (JWT ou session-based).
+•	Cada parceiro terá um perfil com dados como:
+o	Nome, empresa, e-mail
+o	Classificação (bronze, prata, ouro)
+o	Histórico de cursos
+o	TAG UTM associada (para rastreamento de inscrições)
+•	Após login, o parceiro verá conteúdo personalizado.
+________________________________________
+🏠 Página Inicial (/)
+•	Destaques:
+o	Cursos em andamento
+o	Parceiros em destaque
+o	Próximos eventos (com data e link)
+•	CTA’s visíveis:
+o	Inscreva-se
+o	Acompanhe seu desempenho
+o	Solicite seu certificado
+________________________________________
+📚 Página de Cursos (/cursos)
+•	Exibir os cursos disponíveis:
+o	CAAR
+o	PILOTO DJI
+o	PILOTO ENTERPRISE
+o	COMBO CAAR + PILOTO DJI
+•	Cada curso terá uma página detalhada com:
+o	Descrição, carga horária, professores
+o	Requisitos
+o	Formulário de inscrição (com preenchimento automático da TAG UTM do parceiro)
+o	Abas ou menu lateral com:
+	Progresso e acompanhamento (notas, módulos)
+	Upload e download de documentos obrigatórios
+	Resultados e avaliações
+	Solicitação de certificado (e status)
+________________________________________
+📊 Minha Jornada (/jornada)
+•	Exibir dados personalizados do parceiro:
+o	Classificação atual (bronze, prata, ouro)
+	Com explicação dos critérios e benefícios
+o	Histórico de cursos
+	Concluídos, em andamento, pendentes
+o	Pontuação ou ranking
+o	Benefícios ativos (ex: descontos, convites exclusivos)
+________________________________________
+🧑‍🏫 Sobre a AgroAcademy (/sobre)
+•	Missão, visão e valores
+•	Diferenciais (ex: maior escola global, especialistas DJI, etc.)
+•	Equipe e professores (com mini bios)
+•	Tecnologias utilizadas (DJI, simuladores, plataformas)
+•	Parcerias institucionais
+________________________________________
+🧩 Considerações Técnicas:
+•	Design responsivo e amigável (pode usar Tailwind ou Bootstrap)
+•	Backend com autenticação e base de dados relacional (PostgreSQL ou similar)
+•	Componentização para facilitar a manutenção (ex: React/Vue/Next.js recomendado)
+•	Código limpo, com separação de responsabilidades
+•	Se possível, manter a estrutura modular para permitir expansão futura (ex: dashboard administrativo)
