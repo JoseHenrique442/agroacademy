@@ -69,11 +69,25 @@ export const courses = pgTable("courses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Partner course enrollments
-export const enrollments = pgTable("enrollments", {
+// Students table - the actual people taking courses
+export const students = pgTable("students", {
   id: serial("id").primaryKey(),
   partnerId: integer("partner_id").notNull().references(() => partners.id),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone"),
+  cpf: varchar("cpf"),
+  address: text("address"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Student course enrollments (partners enroll their students)
+export const enrollments = pgTable("enrollments", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").notNull().references(() => students.id),
   courseId: integer("course_id").notNull().references(() => courses.id),
+  partnerId: integer("partner_id").notNull().references(() => partners.id), // Who enrolled this student
   status: varchar("status").notNull().default("enrolled"), // enrolled, in_progress, completed, dropped
   progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
   grade: decimal("grade", { precision: 5, scale: 2 }),
@@ -144,9 +158,18 @@ export const partnersRelations = relations(partners, ({ one, many }) => ({
     fields: [partners.userId],
     references: [users.id],
   }),
+  students: many(students),
   enrollments: many(enrollments),
   documents: many(partnerDocuments),
   eventRegistrations: many(eventRegistrations),
+}));
+
+export const studentsRelations = relations(students, ({ one, many }) => ({
+  partner: one(partners, {
+    fields: [students.partnerId],
+    references: [partners.id],
+  }),
+  enrollments: many(enrollments),
 }));
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -155,6 +178,10 @@ export const coursesRelations = relations(courses, ({ many }) => ({
 }));
 
 export const enrollmentsRelations = relations(enrollments, ({ one, many }) => ({
+  student: one(students, {
+    fields: [enrollments.studentId],
+    references: [students.id],
+  }),
   partner: one(partners, {
     fields: [enrollments.partnerId],
     references: [partners.id],
@@ -178,6 +205,12 @@ export const insertPartnerSchema = createInsertSchema(partners).omit({
 });
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStudentSchema = createInsertSchema(students).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -209,6 +242,8 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Partner = typeof partners.$inferSelect;
 export type InsertPartner = z.infer<typeof insertPartnerSchema>;
+export type Student = typeof students.$inferSelect;
+export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type Enrollment = typeof enrollments.$inferSelect;

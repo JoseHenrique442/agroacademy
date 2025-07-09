@@ -89,30 +89,16 @@ export default function CourseCard({ course, enrollment }: CourseCardProps) {
         </div>
         
         <div className="flex space-x-3">
-          {enrollment ? (
-            <>
-              <Button 
-                className="flex-1 bg-agro-primary text-white hover:bg-agro-primary-dark"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Continuar
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button 
-                className="flex-1 bg-agro-primary text-white hover:bg-agro-primary-dark"
-              >
-                Inscrever-se
-              </Button>
-              <Button variant="outline" size="sm">
-                Detalhes
-              </Button>
-            </>
-          )}
+          <Button 
+            className="flex-1 bg-agro-primary text-white hover:bg-agro-primary-dark"
+            onClick={() => window.location.href = `/courses/${course.id}`}
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Gerenciar Curso
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = `/courses/${course.id}`}>
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

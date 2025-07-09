@@ -1,6 +1,7 @@
 import {
   users,
   partners,
+  students,
   courses,
   enrollments,
   events,
@@ -11,6 +12,8 @@ import {
   type UpsertUser,
   type Partner,
   type InsertPartner,
+  type Student,
+  type InsertStudent,
   type Course,
   type InsertCourse,
   type Enrollment,
@@ -36,16 +39,23 @@ export interface IStorage {
   createPartner(partner: InsertPartner): Promise<Partner>;
   updatePartner(id: number, updates: Partial<Partner>): Promise<Partner>;
   
+  // Student operations (partners manage their students)
+  getPartnerStudents(partnerId: number): Promise<Student[]>;
+  createStudent(student: InsertStudent): Promise<Student>;
+  updateStudent(id: number, updates: Partial<Student>): Promise<Student>;
+  getStudent(id: number): Promise<Student | undefined>;
+  
   // Course operations
   getAllCourses(): Promise<Course[]>;
   getCourse(id: number): Promise<Course | undefined>;
   createCourse(course: InsertCourse): Promise<Course>;
+  getCourseEnrollments(courseId: number): Promise<(Enrollment & { student: Student; partner: Partner })[]>;
   
-  // Enrollment operations
-  getPartnerEnrollments(partnerId: number): Promise<(Enrollment & { course: Course })[]>;
+  // Enrollment operations (students enrolled by partners)
+  getPartnerEnrollments(partnerId: number): Promise<(Enrollment & { course: Course; student: Student })[]>;
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollment(id: number, updates: Partial<Enrollment>): Promise<Enrollment>;
-  getEnrollmentProgress(partnerId: number, courseId: number): Promise<Enrollment | undefined>;
+  getStudentEnrollments(studentId: number): Promise<(Enrollment & { course: Course })[]>;
   
   // Event operations
   getAllEvents(): Promise<Event[]>;
@@ -116,13 +126,90 @@ export class DatabaseStorage implements IStorage {
     return newCourse;
   }
 
-  // Enrollment operations
-  async getPartnerEnrollments(partnerId: number): Promise<(Enrollment & { course: Course })[]> {
+  // Student operations
+  async getPartnerStudents(partnerId: number): Promise<Student[]> {
+    return await db.select().from(students).where(eq(students.partnerId, partnerId));
+  }
+
+  async createStudent(student: InsertStudent): Promise<Student> {
+    const [newStudent] = await db.insert(students).values(student).returning();
+    return newStudent;
+  }
+
+  async updateStudent(id: number, updates: Partial<Student>): Promise<Student> {
+    const [updatedStudent] = await db
+      .update(students)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(students.id, id))
+      .returning();
+    return updatedStudent;
+  }
+
+  async getStudent(id: number): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.id, id));
+    return student;
+  }
+
+  async getCourseEnrollments(courseId: number): Promise<(Enrollment & { student: Student; partner: Partner })[]> {
     return await db
       .select({
         id: enrollments.id,
-        partnerId: enrollments.partnerId,
+        studentId: enrollments.studentId,
         courseId: enrollments.courseId,
+        partnerId: enrollments.partnerId,
+        status: enrollments.status,
+        progress: enrollments.progress,
+        grade: enrollments.grade,
+        startDate: enrollments.startDate,
+        completionDate: enrollments.completionDate,
+        certificateRequested: enrollments.certificateRequested,
+        certificateIssued: enrollments.certificateIssued,
+        createdAt: enrollments.createdAt,
+        updatedAt: enrollments.updatedAt,
+        student: students,
+        partner: partners,
+      })
+      .from(enrollments)
+      .innerJoin(students, eq(enrollments.studentId, students.id))
+      .innerJoin(partners, eq(enrollments.partnerId, partners.id))
+      .where(eq(enrollments.courseId, courseId))
+      .orderBy(desc(enrollments.createdAt));
+  }
+
+  // Enrollment operations
+  async getPartnerEnrollments(partnerId: number): Promise<(Enrollment & { course: Course; student: Student })[]> {
+    return await db
+      .select({
+        id: enrollments.id,
+        studentId: enrollments.studentId,
+        courseId: enrollments.courseId,
+        partnerId: enrollments.partnerId,
+        status: enrollments.status,
+        progress: enrollments.progress,
+        grade: enrollments.grade,
+        startDate: enrollments.startDate,
+        completionDate: enrollments.completionDate,
+        certificateRequested: enrollments.certificateRequested,
+        certificateIssued: enrollments.certificateIssued,
+        createdAt: enrollments.createdAt,
+        updatedAt: enrollments.updatedAt,
+        course: courses,
+        student: students,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .innerJoin(students, eq(enrollments.studentId, students.id))
+      .where(eq(enrollments.partnerId, partnerId))
+      .orderBy(desc(enrollments.createdAt));
+  }
+
+  async getStudentEnrollments(studentId: number): Promise<(Enrollment & { course: Course })[]> {
+    return await db
+      .select({
+        id: enrollments.id,
+        studentId: enrollments.studentId,
+        courseId: enrollments.courseId,
+        partnerId: enrollments.partnerId,
         status: enrollments.status,
         progress: enrollments.progress,
         grade: enrollments.grade,
@@ -136,7 +223,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id))
-      .where(eq(enrollments.partnerId, partnerId))
+      .where(eq(enrollments.studentId, studentId))
       .orderBy(desc(enrollments.createdAt));
   }
 
@@ -154,13 +241,7 @@ export class DatabaseStorage implements IStorage {
     return updatedEnrollment;
   }
 
-  async getEnrollmentProgress(partnerId: number, courseId: number): Promise<Enrollment | undefined> {
-    const [enrollment] = await db
-      .select()
-      .from(enrollments)
-      .where(and(eq(enrollments.partnerId, partnerId), eq(enrollments.courseId, courseId)));
-    return enrollment;
-  }
+
 
   // Event operations
   async getAllEvents(): Promise<Event[]> {

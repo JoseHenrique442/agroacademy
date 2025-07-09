@@ -94,6 +94,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/courses/:id/enrollments', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const enrollments = await storage.getCourseEnrollments(courseId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching course enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch course enrollments" });
+    }
+  });
+
+  // Student routes
+  app.get('/api/students', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const partner = await storage.getPartnerByUserId(userId);
+      if (!partner) {
+        return res.status(404).json({ message: "Partner not found" });
+      }
+      
+      const students = await storage.getPartnerStudents(partner.id);
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
+  app.post('/api/students', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const partner = await storage.getPartnerByUserId(userId);
+      if (!partner) {
+        return res.status(404).json({ message: "Partner not found" });
+      }
+
+      const studentData = {
+        ...req.body,
+        partnerId: partner.id,
+      };
+
+      const student = await storage.createStudent(studentData);
+      res.json(student);
+    } catch (error) {
+      console.error("Error creating student:", error);
+      res.status(500).json({ message: "Failed to create student" });
+    }
+  });
+
   // Enrollment routes
   app.get('/api/enrollments', isAuthenticated, async (req: any, res) => {
     try {
