@@ -25,10 +25,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/partner', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const partner = await storage.getPartnerByUserId(userId);
+      let partner = await storage.getPartnerByUserId(userId);
+      
+      // If no partner exists, create one automatically
       if (!partner) {
-        return res.status(404).json({ message: "Partner not found" });
+        const user = await storage.getUser(userId);
+        const email = user?.email || "";
+        const company = email.split("@")[1]?.split(".")[0] || "Empresa";
+        const utmTag = `partner_${userId}_${Date.now()}`;
+        
+        partner = await storage.createPartner({
+          userId: userId,
+          company: company.charAt(0).toUpperCase() + company.slice(1),
+          classification: "bronze",
+          utmTag: utmTag,
+          totalScore: 0,
+          completedCourses: 0,
+          coursesInProgress: 0,
+          completionRate: "0",
+        });
       }
+      
       res.json(partner);
     } catch (error) {
       console.error("Error fetching partner:", error);
